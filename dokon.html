@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TozaMeva — Oziq-ovqat Do'koni</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2d6a4f;
+    --green-light: #52b788;
+    --cream: #fefae0;
+    --brown: #774936;
+    --accent: #e9c46a;
+    --dark: #1a1a1a;
+    --gray: #6b6b6b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); overflow-x: hidden; }
+
+  /* ADMIN PANEL */
+  #admin-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 9999; align-items: center; justify-content: center;
+  }
+  #admin-overlay.open { display: flex; }
+  .admin-box {
+    background: white; border-radius: 24px; padding: 2rem;
+    width: 90%; max-width: 480px; box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .admin-box h2 {
+    font-family: 'Playfair Display', serif; font-size: 1.5rem;
+    color: var(--green); margin-bottom: 0.3rem;
+  }
+  .admin-box p { font-size: 0.82rem; color: var(--gray); margin-bottom: 1.5rem; }
+  .admin-field { margin-bottom: 1rem; }
+  .admin-field label { font-size: 0.78rem; font-weight: 600; color: var(--dark); display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .admin-field input {
+    width: 100%; padding: 0.75rem 1rem; border: 1.5px solid #e0e0e0;
+    border-radius: 10px; font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+    outline: none; transition: border 0.2s;
+  }
+  .admin-field input:focus { border-color: var(--green); }
+  .admin-btns { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+  .admin-save {
+    flex: 1; background: var(--green); color: white; border: none;
+    padding: 0.85rem; border-radius: 10px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer; transition: background 0.2s;
+  }
+  .admin-save:hover { background: #1e4d39; }
+  .admin-cancel {
+    background: #f0f0f0; color: var(--dark); border: none;
+    padding: 0.85rem 1.5rem; border-radius: 10px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer;
+  }
+  .admin-btn-float {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--green); color: white; border: none;
+    padding: 0.75rem 1.3rem; border-radius: 50px; font-size: 0.85rem;
+    font-weight: 600; cursor: pointer; box-shadow: 0 8px 24px rgba(45,106,79,0.35);
+    transition: all 0.2s;
+  }
+  .admin-btn-float:hover { background: #1e4d39; transform: translateY(-2px); }
+  .saved-toast {
+    position: fixed; bottom: 80px; right: 24px; z-index: 9999;
+    background: var(--dark); color: white; padding: 0.7rem 1.2rem;
+    border-radius: 10px; font-size: 0.85rem; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none;
+  }
+  .saved-toast.show { opacity: 1; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.2rem 5%;
+    background: rgba(254,250,224,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(45,106,79,0.12);
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; color: var(--green); letter-spacing: -0.5px; }
+  .logo span { color: var(--brown); }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a { text-decoration: none; color: var(--dark); font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--green); }
+  .nav-cta { background: var(--green); color: white !important; padding: 0.55rem 1.4rem; border-radius: 50px; transition: background 0.2s !important; }
+  .nav-cta:hover { background: var(--green-light) !important; }
+
+  /* HERO */
+  #bosh { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 4rem; padding: 10rem 5% 5rem; position: relative; overflow: hidden; }
+  .hero-bg { position: absolute; right: -100px; top: -100px; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,0.18), transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-block; background: rgba(45,106,79,0.1); color: var(--green); padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.78rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1.5rem; border: 1px solid rgba(45,106,79,0.2); }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: clamp(2.8rem, 5vw, 4.2rem); font-weight: 900; line-height: 1.1; margin-bottom: 1.5rem; }
+  .hero-title em { color: var(--green); font-style: italic; }
+  .hero-desc { font-size: 1.05rem; color: var(--gray); line-height: 1.7; max-width: 420px; margin-bottom: 2.5rem; }
+  .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-primary { background: var(--green); color: white; padding: 0.85rem 2rem; border-radius: 50px; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; box-shadow: 0 8px 24px rgba(45,106,79,0.25); }
+  .btn-primary:hover { background: #1e4d39; transform: translateY(-2px); }
+  .btn-outline { border: 2px solid var(--green); color: var(--green); padding: 0.85rem 2rem; border-radius: 50px; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
+  .btn-outline:hover { background: var(--green); color: white; }
+  .hero-stats { display: flex; gap: 2.5rem; margin-top: 3rem; }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--green); }
+  .stat-label { font-size: 0.8rem; color: var(--gray); margin-top: 2px; }
+  .hero-visual { position: relative; }
+  .hero-card-main { background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.08); position: relative; overflow: hidden; }
+  .hero-card-main::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, var(--green), var(--accent)); }
+  .product-grid-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .mini-product { background: var(--cream); border-radius: 14px; padding: 1.2rem; text-align: center; transition: transform 0.2s; cursor: pointer; }
+  .mini-product:hover { transform: translateY(-3px); }
+  .mini-product .emoji { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+  .mini-product .name { font-size: 0.82rem; font-weight: 500; }
+  .mini-product .price { font-size: 0.78rem; color: var(--green); font-weight: 600; margin-top: 2px; }
+  .delivery-badge { display: flex; align-items: center; gap: 0.8rem; background: rgba(45,106,79,0.07); border-radius: 12px; padding: 0.9rem 1rem; }
+  .delivery-badge .icon { font-size: 1.5rem; }
+  .delivery-badge .text { font-size: 0.82rem; }
+  .delivery-badge .text strong { display: block; color: var(--green); }
+
+  section { padding: 6rem 5%; }
+  .section-tag { display: inline-block; font-size: 0.75rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--green); margin-bottom: 0.8rem; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 900; margin-bottom: 1rem; line-height: 1.2; }
+  .section-desc { color: var(--gray); font-size: 1rem; line-height: 1.7; max-width: 520px; }
+
+  /* MAHSULOTLAR */
+  #mahsulotlar { background: white; }
+  .products-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem; flex-wrap: wrap; gap: 1rem; }
+  .filter-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .tab { padding: 0.45rem 1.1rem; border-radius: 50px; font-size: 0.82rem; border: 1.5px solid #e0e0e0; background: white; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+  .tab.active, .tab:hover { background: var(--green); color: white; border-color: var(--green); }
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
+  .product-card { background: var(--cream); border-radius: 20px; overflow: hidden; transition: all 0.25s; cursor: pointer; border: 1px solid rgba(0,0,0,0.04); }
+  .product-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.1); }
+  .product-img { background: linear-gradient(135deg, #f0f0f0, #e8e8e8); height: 160px; display: flex; align-items: center; justify-content: center; font-size: 5rem; position: relative; }
+  .product-badge { position: absolute; top: 10px; left: 10px; background: var(--green); color: white; font-size: 0.68rem; font-weight: 600; padding: 3px 8px; border-radius: 50px; }
+  .product-badge.yangi { background: var(--brown); }
+  .product-info { padding: 1.2rem; }
+  .product-cat { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; }
+  .product-name { font-weight: 600; font-size: 1rem; margin: 0.3rem 0; }
+  .product-weight { font-size: 0.8rem; color: var(--gray); margin-bottom: 1rem; }
+  .product-footer { display: flex; justify-content: space-between; align-items: center; }
+  .product-price { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--green); }
+  .add-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--green); color: white; border: none; font-size: 1.3rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .add-btn:hover { background: var(--green-light); transform: scale(1.1); }
+
+  /* BIZ HAQIMIZDA */
+  #biz { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; background: var(--cream); }
+  .about-card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 16px 48px rgba(0,0,0,0.08); }
+  .about-img-area { background: linear-gradient(135deg, var(--green), var(--green-light)); height: 280px; display: flex; align-items: center; justify-content: center; font-size: 6rem; }
+  .about-info { padding: 1.5rem; }
+  .about-info h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .about-info p { font-size: 0.85rem; color: var(--gray); line-height: 1.6; }
+  .features-list { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 2.5rem; }
+  .feature-item { display: flex; gap: 1rem; align-items: flex-start; }
+  .feature-icon { width: 44px; height: 44px; background: rgba(45,106,79,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .feature-text h4 { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; }
+  .feature-text p { font-size: 0.83rem; color: var(--gray); line-height: 1.5; }
+
+  /* BOG'LANISH */
+  #boglanish { background: var(--green); color: white; }
+  #boglanish .section-title { color: white; }
+  #boglanish .section-desc { color: rgba(255,255,255,0.75); }
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 3rem; align-items: start; }
+  .contact-cards { display: flex; flex-direction: column; gap: 1rem; }
+  .contact-card { background: rgba(255,255,255,0.1); border-radius: 16px; padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: 1rem; backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15); }
+  .contact-card .c-icon { font-size: 1.6rem; }
+  .contact-card .c-label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; }
+  .contact-card .c-val { font-weight: 600; font-size: 0.95rem; margin-top: 2px; }
+  .contact-form { display: flex; flex-direction: column; gap: 1rem; }
+  .form-input { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.9rem 1.2rem; color: white; font-size: 0.9rem; font-family: 'DM Sans', sans-serif; outline: none; transition: border 0.2s; }
+  .form-input::placeholder { color: rgba(255,255,255,0.5); }
+  .form-input:focus { border-color: var(--accent); }
+  textarea.form-input { resize: vertical; min-height: 110px; }
+  .form-btn { background: var(--accent); color: var(--dark); border: none; padding: 0.9rem; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; }
+  .form-btn:hover { background: white; transform: translateY(-1px); }
+
+  footer { background: var(--dark); color: white; padding: 2.5rem 5%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+
+  @media (max-width: 768px) {
+    #bosh { grid-template-columns: 1fr; padding-top: 8rem; }
+    .hero-visual { display: none; }
+    #biz { grid-template-columns: 1fr; }
+    .about-visual { display: none; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ADMIN FLOAT BUTTON -->
+<button class="admin-btn-float" onclick="openAdmin()">⚙️ Ma'lumotlarni tahrirlash</button>
+<div class="saved-toast" id="toast">✅ Saqlandi!</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-overlay">
+  <div class="admin-box">
+    <h2>⚙️ Do'kon Ma'lumotlari</h2>
+    <p>Quyidagi ma'lumotlarni o'zingiz kiriting — sayt avtomatik yangilanadi.</p>
+
+    <div class="admin-field">
+      <label>Do'kon nomi</label>
+      <input id="a-name" type="text" placeholder="TozaMeva">
+    </div>
+    <div class="admin-field">
+      <label>📞 Telefon raqam</label>
+      <input id="a-phone" type="tel" placeholder="+998 90 123 45 67">
+    </div>
+    <div class="admin-field">
+      <label>📞 2-chi raqam (ixtiyoriy)</label>
+      <input id="a-phone2" type="tel" placeholder="+998 91 000 00 00">
+    </div>
+    <div class="admin-field">
+      <label>📍 Manzil</label>
+      <input id="a-address" type="text" placeholder="Andijon shahar, ...">
+    </div>
+    <div class="admin-field">
+      <label>✉️ Email</label>
+      <input id="a-email" type="email" placeholder="info@dokon.uz">
+    </div>
+    <div class="admin-field">
+      <label>🕐 Ish vaqti</label>
+      <input id="a-hours" type="text" placeholder="Har kuni: 08:00 – 22:00">
+    </div>
+    <div class="admin-field">
+      <label>📣 Telegram / Instagram</label>
+      <input id="a-social" type="text" placeholder="@dokonuzb">
+    </div>
+
+    <div class="admin-btns">
+      <button class="admin-save" onclick="saveAdmin()">💾 Saqlash</button>
+      <button class="admin-cancel" onclick="closeAdmin()">Bekor qilish</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" id="nav-logo">Toza<span>Meva</span></div>
+  <ul class="nav-links">
+    <li><a href="#bosh">Bosh sahifa</a></li>
+    <li><a href="#mahsulotlar">Mahsulotlar</a></li>
+    <li><a href="#biz">Biz haqimizda</a></li>
+    <li><a href="#boglanish" class="nav-cta">Bog'lanish</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="bosh">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🌿 Yangi & Sifatli Mahsulotlar</div>
+    <h1 class="hero-title">Eng <em>toza</em> va<br>foydali taomlar<br>uyingizga</h1>
+    <p class="hero-desc">Fermerlardan to'g'ridan-to'g'ri sizning stolingizgacha — har kuni yangi, sifatli va arzon oziq-ovqat mahsulotlari.</p>
+    <div class="hero-btns">
+      <a href="#mahsulotlar" class="btn-primary">Xarid qilish →</a>
+      <a href="#biz" class="btn-outline">Biz haqimizda</a>
+    </div>
+    <div class="hero-stats">
+      <div><div class="stat-num">500+</div><div class="stat-label">Mahsulot turi</div></div>
+      <div><div class="stat-num">2k+</div><div class="stat-label">Mijozlar</div></div>
+      <div><div class="stat-num">100%</div><div class="stat-label">Organik</div></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-card-main">
+      <div class="product-grid-mini">
+        <div class="mini-product"><span class="emoji">🍎</span><div class="name">Olma</div><div class="price">8 500 so'm/kg</div></div>
+        <div class="mini-product"><span class="emoji">🥕</span><div class="name">Sabzi</div><div class="price">4 000 so'm/kg</div></div>
+        <div class="mini-product"><span class="emoji">🥛</span><div class="name">Sut</div><div class="price">12 000 so'm/l</div></div>
+        <div class="mini-product"><span class="emoji">🍅</span><div class="name">Pomidor</div><div class="price">6 000 so'm/kg</div></div>
+      </div>
+      <div class="delivery-badge">
+        <div class="icon">🚚</div>
+        <div class="text"><strong>Bepul yetkazib berish</strong>50 000 so'mdan yuqori buyurtmalarga</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAHSULOTLAR -->
+<section id="mahsulotlar">
+  <div class="products-header">
+    <div><span class="section-tag">Katalog</span><h2 class="section-title">Bizning mahsulotlar</h2></div>
+    <div class="filter-tabs">
+      <button class="tab active">Barchasi</button>
+      <button class="tab">Mevalar</button>
+      <button class="tab">Sabzavotlar</button>
+      <button class="tab">Sut mahsulotlari</button>
+    </div>
+  </div>
+  <div class="products-grid">
+    <div class="product-card"><div class="product-img">🍎<span class="product-badge">Sifatli</span></div><div class="product-info"><div class="product-cat">Mevalar</div><div class="product-name">Qizil Olma</div><div class="product-weight">1 kg</div><div class="product-footer"><div class="product-price">8 500 so'm</div><button class="add-btn">+</button></div></div></div>
+    <div class="product-card"><div class="product-img">🍊<span class="product-badge yangi">Yangi</span></div><div class="product-info"><div class="product-cat">Mevalar</div><div class="product-name">Apelsin</div><div class="product-weight">1 kg</div><div class="product-footer"><div class="product-price">12 000 so'm</div><button class="add-btn">+</button></div></div></div>
+    <div class="product-card"><div class="product-img">🥕</div><div class="product-info"><div class="product-cat">Sabzavotlar</div><div class="product-name">Sabzi</div><div class="product-weight">1 kg</div><div class="product-footer"><div class="product-price">4 000 so'm</div><button class="add-btn">+</button></div></div></div>
+    <div class="product-card"><div class="product-img">🥛<span class="product-badge">Organik</span></div><div class="product-info"><div class="product-cat">Sut mahsulotlari</div><div class="product-name">Yangi Sut</div><div class="product-weight">1 litr</div><div class="product-footer"><div class="product-price">12 000 so'm</div><button class="add-btn">+</button></div></div></div>
+    <div class="product-card"><div class="product-img">🍅</div><div class="product-info"><div class="product-cat">Sabzavotlar</div><div class="product-name">Pomidor</div><div class="product-weight">1 kg</div><div class="product-footer"><div class="product-price">6 000 so'm</div><button class="add-btn">+</button></div></div></div>
+    <div class="product-card"><div class="product-img">🍞<span class="product-badge yangi">Yangi</span></div><div class="product-info"><div class="product-cat">Non mahsulotlari</div><div class="product-name">Bug'doy Noni</div><div class="product-weight">600 g</div><div class="product-footer"><div class="product-price">7 000 so'm</div><button class="add-btn">+</button></div></div></div>
+    <div class="product-card"><div class="product-img">🧀</div><div class="product-info"><div class="product-cat">Sut mahsulotlari</div><div class="product-name">Pishloq</div><div class="product-weight">500 g</div><div class="product-footer"><div class="product-price">35 000 so'm</div><button class="add-btn">+</button></div></div></div>
+    <div class="product-card"><div class="product-img">🍇<span class="product-badge">Sifatli</span></div><div class="product-info"><div class="product-cat">Mevalar</div><div class="product-name">Uzum</div><div class="product-weight">1 kg</div><div class="product-footer"><div class="product-price">18 000 so'm</div><button class="add-btn">+</button></div></div></div>
+  </div>
+</section>
+
+<!-- BIZ HAQIMIZDA -->
+<section id="biz">
+  <div class="about-visual">
+    <div class="about-card">
+      <div class="about-img-area">🌾</div>
+      <div class="about-info">
+        <h3>Mahalliy fermerlardan</h3>
+        <p>Biz O'zbekistonning eng yaxshi fermer xo'jaliklaridan mahsulot olamiz va sizga eng yangi holda yetkazib beramiz.</p>
+      </div>
+    </div>
+  </div>
+  <div class="about-content">
+    <span class="section-tag">Biz haqimizda</span>
+    <h2 class="section-title">Nima uchun bizni tanlashadi?</h2>
+    <p class="section-desc">TozaMeva — sog'lom ovqatlanish madaniyatini yoyish missiyasi. Minglab oilalarga sifatli mahsulot yetkazib kelmoqdamiz.</p>
+    <div class="features-list">
+      <div class="feature-item"><div class="feature-icon">🌿</div><div class="feature-text"><h4>100% Organik</h4><p>Kimyoviy o'g'itsiz, tabiiy usulda yetishtirilgan.</p></div></div>
+      <div class="feature-item"><div class="feature-icon">🚚</div><div class="feature-text"><h4>Tez Yetkazib Berish</h4><p>Buyurtma bergan kuningiz yoki ertasi kuni yetkazib beramiz.</p></div></div>
+      <div class="feature-item"><div class="feature-icon">💰</div><div class="feature-text"><h4>Qulay Narxlar</h4><p>Vositachilarsiz, to'g'ridan-to'g'ri fermerdan.</p></div></div>
+      <div class="feature-item"><div class="feature-icon">⭐</div><div class="feature-text"><h4>Kafolatlangan Sifat</h4><p>Norozi bo'lsangiz, to'liq qaytarib beramiz.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- BOG'LANISH -->
+<section id="boglanish">
+  <span class="section-tag" style="color:var(--accent)">Aloqa</span>
+  <h2 class="section-title">Biz bilan bog'laning</h2>
+  <p class="section-desc">Savollaringiz bormi? Biz 7/24 xizmatdamiz!</p>
+  <div class="contact-grid">
+    <div class="contact-cards">
+      <div class="contact-card"><div class="c-icon">📞</div><div><div class="c-label">Telefon</div><div class="c-val" id="show-phone">—</div></div></div>
+      <div class="contact-card"><div class="c-icon">📞</div><div><div class="c-label">2-chi raqam</div><div class="c-val" id="show-phone2">—</div></div></div>
+      <div class="contact-card"><div class="c-icon">📍</div><div><div class="c-label">Manzil</div><div class="c-val" id="show-address">Andijon shahar</div></div></div>
+      <div class="contact-card"><div class="c-icon">✉️</div><div><div class="c-label">Email</div><div class="c-val" id="show-email">—</div></div></div>
+      <div class="contact-card"><div class="c-icon">🕐</div><div><div class="c-label">Ish vaqti</div><div class="c-val" id="show-hours">Har kuni: 08:00 – 22:00</div></div></div>
+      <div class="contact-card"><div class="c-icon">📣</div><div><div class="c-label">Ijtimoiy tarmoq</div><div class="c-val" id="show-social">—</div></div></div>
+    </div>
+    <div class="contact-form">
+      <input class="form-input" type="text" placeholder="Ismingiz">
+      <input class="form-input" type="tel" placeholder="Telefon raqamingiz">
+      <textarea class="form-input" placeholder="Xabaringiz yoki buyurtmangiz..."></textarea>
+      <button class="form-btn" onclick="alert('Xabaringiz yuborildi! Tez orada bog\'lanamiz 📞')">Yuborish →</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="logo" style="color:var(--green-light)">Toza<span style="color:#e9c46a">Meva</span></div>
+  <p style="font-size:0.82rem;color:rgba(255,255,255,0.4)">© 2024 TozaMeva. Barcha huquqlar himoyalangan.</p>
+</footer>
+
+<script>
+  // Load saved data
+  function loadData() {
+    const d = JSON.parse(localStorage.getItem('dokon_info') || '{}');
+    if (d.name) {
+      document.getElementById('nav-logo').innerHTML = d.name.slice(0,-4) + '<span>' + d.name.slice(-4) + '</span>';
+    }
+    document.getElementById('show-phone').textContent   = d.phone   || '—';
+    document.getElementById('show-phone2').textContent  = d.phone2  || '—';
+    document.getElementById('show-address').textContent = d.address || 'Andijon shahar';
+    document.getElementById('show-email').textContent   = d.email   || '—';
+    document.getElementById('show-hours').textContent   = d.hours   || 'Har kuni: 08:00 – 22:00';
+    document.getElementById('show-social').textContent  = d.social  || '—';
+    // fill inputs
+    document.getElementById('a-name').value    = d.name    || '';
+    document.getElementById('a-phone').value   = d.phone   || '';
+    document.getElementById('a-phone2').value  = d.phone2  || '';
+    document.getElementById('a-address').value = d.address || '';
+    document.getElementById('a-email').value   = d.email   || '';
+    document.getElementById('a-hours').value   = d.hours   || '';
+    document.getElementById('a-social').value  = d.social  || '';
+  }
+
+  function openAdmin() {
+    loadData();
+    document.getElementById('admin-overlay').classList.add('open');
+  }
+
+  function closeAdmin() {
+    document.getElementById('admin-overlay').classList.remove('open');
+  }
+
+  function saveAdmin() {
+    const d = {
+      name:    document.getElementById('a-name').value.trim(),
+      phone:   document.getElementById('a-phone').value.trim(),
+      phone2:  document.getElementById('a-phone2').value.trim(),
+      address: document.getElementById('a-address').value.trim(),
+      email:   document.getElementById('a-email').value.trim(),
+      hours:   document.getElementById('a-hours').value.trim(),
+      social:  document.getElementById('a-social').value.trim(),
+    };
+    localStorage.setItem('dokon_info', JSON.stringify(d));
+    loadData();
+    closeAdmin();
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // Close overlay on bg click
+  document.getElementById('admin-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeAdmin();
+  });
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  // Add to cart
+  document.querySelectorAll('.add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.textContent = '✓';
+      btn.style.background = '#e9c46a';
+      btn.style.color = '#1a1a1a';
+      setTimeout(() => { btn.textContent = '+'; btn.style.background = ''; btn.style.color = ''; }, 1500);
+    });
+  });
+
+  loadData();
+</script>
+</body>
+</html>
